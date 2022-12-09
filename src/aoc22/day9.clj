@@ -35,16 +35,20 @@
     (cond-> rope
       (far-apart? prev curr) (assoc-in [:knots knot] (move-toward curr prev)))))
 
+(defn move-coords
+  [knot-coords direction-coords]
+  (mapv + knot-coords direction-coords))
+
+(defn update-tail-hst
+  [{:keys [knots n-knot] :as rope}]
+  (update rope :tail-hst conj (knots (dec n-knot))))
+
 (defn update-knots
   [{:keys [n-knot] :as rope} mxy]
-  (let [old-tail (get-in rope [:knots (dec n-knot)])
-        head (mapv + (get-in rope [:knots 0]) mxy)
-        rope (reduce update-knot
-                     (assoc-in rope [:knots 0] head)
-                     (range 1 n-knot))
-        tail (get-in rope [:knots (dec n-knot)])]
-    (cond-> rope
-      (not= old-tail tail) (update :tail-hst conj tail))))
+  (update-tail-hst
+   (reduce update-knot
+           (update-in rope [:knots 0] move-coords mxy)
+           (range 1 n-knot))))
 
 (defn update-rope
   [rope motion]
